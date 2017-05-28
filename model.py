@@ -4,7 +4,7 @@ np.random.seed(42)
 
 from keras.models import Sequential
 from keras.layers import *
-from utils import vectorize
+from utils import vectorize, column_matrix
 
 
 class EncoderDecoder:
@@ -63,30 +63,32 @@ class EncoderDecoder:
 	def load_weights(self, filename):
 		self.model.load_weights(filename)
 
-	def train(self, X, Y, nb_epoch):
-		i_end = 0
-		for k in range(1, nb_epoch+1):
-			# Shuffling the training data every epoch to avoid local minima
+	def train(self, X, Y, nb_epoch, step=1000):
+		for e in range(nb_epoch):
 			indices = np.arange(len(X))
 			np.random.shuffle(indices)
-			X = X[indices]
-			Y = Y[indices]
-
-			# Training 1000 sequences at a time
-			for i in range(0, len(X), 1000):
-				sys.stdout.write('Training model: epoch {}th {}/{} samples \r'.format(k, i, len(X)))
+			X, Y = X[indices], Y[indices]
+			for i in range(0, len(X), step):
+				sys.stdout.write('Training model: epoch {}th {}/{} samples \r'.format(e+1, i, len(X)))
 				sys.stdout.flush()
-				i_end = len(X) if i + 1000 >= len(X) else i + 1000
+				i_end = len(X) if i + step >= len(X) else i + step
 				Y_vec = vectorize(Y[i:i_end], one_hot_dim=len(self.target_vocab))
 				self.model.fit(X[i:i_end], Y_vec, batch_size=self.batch_size, epochs=1, verbose=0)
+			print('')
 	
-	def test(X_test):
+	def test(self, X):
 		assert(self.model != None)
-		predictions = np.argmax(self.model.predict(X_test), axis=2)
+		source_idx_word = dict(zip(self.source_vocab.values(), self.source_vocab.keys()))
 		target_idx_word = dict(zip(self.target_vocab.values(), self.target_vocab.keys()))
 		sequences = []
-		for prediction in predictions:
-			sequence = ' '.join([target_idx_word[index] for index in prediction if index > 0])
-			print(sequence)
-			sequences.append(sequence)
-		np.savetxt('data/test_result', sequences, fmt='%s')
+		for i, sample in enumerate(X):
+			sys.stdout.write('Prediction %d of %d \r' % (i+1, len(X)))
+			sys.stdout.flush()
+			preds = self.model.predict_on_batch(np.matrix(sample))
+			prediction = np.argmax(preds, axis=-1).tolist()[0]
+			sequences.append([target_idx_word[index] for index in prediction if index > 0])
+			# original = ' '.join([source_idx_word[index] for index in sample if index > 0])
+			# translated = ' '.join(sequences[-1]) 
+			# print('%d: %s, %s', (i+1, original, translated))
+		print('')
+		return sequences

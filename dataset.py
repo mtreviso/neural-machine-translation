@@ -59,10 +59,10 @@ class DataSet():
 		self.vocab[0] = list(map(lambda x: x[0], self.dist[0].most_common(max_vocab_size - 1)))
 		self.dist[1] = FreqDist(unroll(self.data[1]))
 		self.vocab[1] = list(map(lambda x: x[0], self.dist[1].most_common(max_vocab_size - 1)))
-
-	def to_matrix(self, pad=False):
 		self.source_word_idx = dict(zip(['PAD', 'UNK'] + self.vocab[0], range(len(self.vocab[0])+2)))
 		self.target_word_idx = dict(zip(['PAD', 'UNK'] + self.vocab[1], range(len(self.vocab[1])+2)))
+
+	def to_matrix(self, pad=False):
 		X, Y = [], []
 		for i in range(len(self.data[0])):
 			sent_source, sent_target = self.data[0][i], self.data[1][i]
@@ -81,4 +81,43 @@ class DataSet():
 		print('Target Nb sentences: {}'.format(len(self.data[1])))
 		print('Target Nb words: {}'.format(sum(map(len, self.data[1]))))
 		
+
+
+class TestDataSet():
+
+	def __init__(self, source, source_word_idx, max_len, normalize=False):
+		self.data = []
+		self.source_word_idx = source_word_idx
+		self.normalize = normalize
+		self.max_len = max_len
+		self._load_data(source)
+
+	def _load_data(self, source):
+		with open(source, encoding='utf8') as f:
+			for s in f:
+				s = self._tokenize_source(s.strip())[::-1]
+				if len(s) <= self.max_len and len(s) > 0:
+					self.data.append(s)
+
+	def _tokenize_source(self, text):
+		return text.split()
+
+	def _tokenize_target(self, text):
+		return text.split()
+
+	def _normalize(self, text):
+		return text
+
+	def to_matrix(self, pad=False):
+		X = []
+		for sent_source in self.data:
+			f = lambda t: self.source_word_idx[t] if t in self.source_word_idx else self.source_word_idx['UNK']
+			X.append(list(map(f, sent_source)))
+		if pad:
+			X = pad_sequences(X, mask_value=0)
+		return X
+
+	def info(self):
+		print('Source Nb sentences: {}'.format(len(self.data)))
+		print('Source Nb words: {}'.format(sum(map(len, self.data))))
 
