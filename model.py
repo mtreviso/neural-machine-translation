@@ -76,17 +76,20 @@ class EncoderDecoder:
 				self.model.fit(X[i:i_end], Y_vec, batch_size=self.batch_size, epochs=1, verbose=0)
 			print('')
 	
-	def test(self, X):
+	def test(self, X, step=1000):
 		assert(self.model != None)
 		source_idx_word = dict(zip(self.source_vocab.values(), self.source_vocab.keys()))
 		target_idx_word = dict(zip(self.target_vocab.values(), self.target_vocab.keys()))
 		sequences = []
-		for i, sample in enumerate(X):
+		for i in range(0, len(X), step):
 			sys.stdout.write('Prediction %d of %d \r' % (i+1, len(X)))
 			sys.stdout.flush()
+			i_end = len(X) if i + step >= len(X) else i + step
+			sample = X[i:i_end]
 			preds = self.model.predict_on_batch(np.matrix(sample))
-			prediction = np.argmax(preds, axis=-1).tolist()[0]
-			sequences.append([target_idx_word[index] for index in prediction if index > 0])
+			preds = np.argmax(preds, axis=-1)
+			for prediction in preds:
+				sequences.append([target_idx_word[index] for index in prediction if index > 0])
 			# original = ' '.join([source_idx_word[index] for index in sample if index > 0])
 			# translated = ' '.join(sequences[-1]) 
 			# print('%d: %s, %s', (i+1, original, translated))

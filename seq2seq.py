@@ -81,6 +81,10 @@ def run(options):
 		print('Training model...')
 		ed.train(X, Y, nb_epoch=NB_EPOCH)
 
+		if options.save:
+			print('Saving weights...')
+			ed.save_weights(FNAME_WEIGHTS)
+
 	elif options.mode == 'test' or options.mode == 'both':
 		print('Loading dataset...')
 		test_dataset = TestDataSet(options.test_file, dataset.source_word_idx, max_len=MAX_LEN)
@@ -96,14 +100,6 @@ def run(options):
 		gold_dataset = TestDataSet(options.gold_file, dataset.source_word_idx, max_len=MAX_LEN)
 		gold_dataset.info()
 		eval_bleu(gold_dataset.data, predictions)
-
-
-
-	if options.save:
-		print('Saving weights...')
-		ed.save_weights(FNAME_WEIGHTS)
-
-
 
 
 
