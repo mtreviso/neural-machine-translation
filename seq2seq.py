@@ -50,6 +50,14 @@ def eval_bleu(ref, hyp):
 	print('Bleu Score: %.4f' % score)
 
 
+def save_predictions(list_of_predictions, fname='translated.txt'):
+	f = open(fname, 'w')
+	for predictions in list_of_predictions:
+		text = ' '.join(predictions)
+		f.write(text+'\n')
+	f.close()
+
+
 def run(options):
 
 	print('Loading dataset...')
@@ -97,8 +105,12 @@ def run(options):
 		print('Testing...')
 		predictions = ed.test(X_test)
 
+		print('Saving predictions...')
+		save_predictions(predictions, fname='translated-'+test_file+'.txt')
+
 		gold_dataset = TestDataSet(options.gold_file, dataset.source_word_idx, max_len=MAX_LEN)
 		gold_dataset.info()
+		print('Evaluating BLEU score')
 		eval_bleu(gold_dataset.data, predictions)
 
 
